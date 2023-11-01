@@ -1,0 +1,13 @@
+data("warpbreaks")
+#install.packages("ggplot2")
+library(ggplot2)
+
+
+
+ggplot(warpbreaks, aes(x = tension, y = breaks)) +
+  geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5,binwidth = 2) +
+  stat_summary(fun.data = mean_sdl, fun.args = list(mult = 1),
+               geom = "pointrange", colour = "red")+
+  theme_classic()+
+  geom_hline(yintercept = c(20,70),linetype="dotted")+
+annotate("text",x = Inf, y = c(20,70),label = c("Mut","WT"),vjust = -0.5,hjust= 1.5)
