@@ -11,3 +11,23 @@ ggplot(warpbreaks, aes(x = tension, y = breaks)) +
   theme_classic()+
   geom_hline(yintercept = c(20,70),linetype="dotted")+
 annotate("text",x = Inf, y = c(20,70),label = c("Mut","WT"),vjust = -0.5,hjust= 1.5)
+  
+###################
+data <- read.table("./Nomalized_media_intensity_wide.txt",header = T)
+str(data)
+
+
+tall_data <- data %>%
+  rownames_to_column(var = "Variant") %>%
+  gather(key = "Rep.days", value = "Value",-Variant)
+
+# ordering the x-axis 
+tall_data$Variant <- factor(tall_data$Variant, levels = c("nontag.C1","E13KO.C1","mcherry","v5z8","BC-Mut","CUL-Mut","SWIM-Mut","S15-Mut","R217-Mut","CY482-Mut"))
+
+ggplot(tall_data, aes(x =Variant, y = Value)) +
+geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.17,binwidth = 0.5) +
+stat_summary(fun.data = mean_sdl, fun.args = list(mult = 1),geom = "pointrange", colour = "red",size = 0.1)+
+theme_classic() +
+geom_hline(yintercept = c(4.35,0.96),linetype="dotted")+
+annotate("text",x = Inf, y = c(4.35,0.96),label = c("Wt","Mut"),vjust = 2,hjust=1.5)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
