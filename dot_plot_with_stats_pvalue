@@ -1,0 +1,183 @@
+
+##### example 1
+data("warpbreaks")
+#install.packages("ggplot2")
+library(ggplot2)
+library(car) 
+library(rstatix) 
+ggplot(warpbreaks, aes(x = tension, y = breaks)) +
+  geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5,binwidth = 2) +
+  stat_summary(fun.data = mean_sdl, fun.args = list(mult = 1),
+               geom = "pointrange", colour = "red")+
+  theme_classic()+
+  geom_hline(yintercept = c(20,70),linetype="dotted")+
+annotate("text",x = Inf, y = c(20,70),label = c("Mut","WT"),vjust = -0.5,hjust= 1.5)
+
+##### example 2
+
+library(reshape)
+library(ggplot2)
+library(ggpubr)
+library(cowplot)
+#> 
+#> Attaching package: 'cowplot'
+#> The following object is masked from 'package:ggpubr':
+#> 
+#>     get_legend
+#> The following object is masked from 'package:reshape':
+#> 
+#>     stamp
+
+regcovMat <- structure(list(data1 = c(0.05, 0.068, 0.063, 0.075, 0.047), data2 = c(-0.029, -0.011, 0.009, 0.117, 0.116), data3 = c(-0.048, -0.030, -0.026, -0.049, -0.087), data4 = c(-0.070, -0.072, -0.035, -0.001, -0.021)), class = "data.frame", row.names = c(NA, -5L))
+
+molten.data <- melt(regcovMat)
+#> Using  as id variables
+stat.test <- compare_means(
+  value ~ variable,
+  data = molten.data,
+  method = "t.test",paired = T
+)
+
+ggplot(molten.data) +
+  geom_boxplot(aes(x = variable, y = value, fill = variable)) +
+  stat_pvalue_manual(stat.test, label = "p.signif", y.position = 0.15, step.increase = 0.2) +
+  theme_cowplot() +
+  theme(legend.position = "top")
+
+
+
+#### Experiment description 
+# 1  nt1 and e13-c1 is used to test mcherry, V5z8 and other clinincal mutants 
+#2.  three reps are done 
+#3 Rep 1 FACS done after Day6 
+#4 Rep 2 and 3 done after 8 days 
+
+## check for homogeneity if variance  -- T
+## check for normality --F  ---- still used one-way annova and post-hoc used pair-wise t-test 
+
+
+###################
+data <- read.table("./Nomalized_media_intensity_wide.txt",header = T)
+str(data)
+
+###name change
+colnames(data)
+
+library(tidyverse)
+tall_data <- data %>%
+  rownames_to_column(var = "Clinincal variants") %>%
+  gather(key = "Rep.days", value = "GFP fold change",-'Clinincal variants')
+
+# ordering the x-axis 
+tall_data$`Clinincal variants` <- factor(tall_data$`Clinincal variants`, levels = c("nontag.C1","E13KO.C1","mcherry","v5z8","BC-Mut","CUL-Mut","SWIM-Mut","S15-Mut","R217-Mut","CY482-Mut"))
+
+plot_A <- ggplot(tall_data, aes(x =`Clinincal variants`, y =`GFP fold change`)) +
+geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.17,binwidth = 0.5) +
+stat_summary(fun.data = mean_sdl, fun.args = list(mult = 1),geom = "pointrange", colour = "red",size = 0.1)+
+theme_classic() +
+geom_hline(yintercept = c(4.35,0.96),linetype="dotted")+
+annotate("text",x = Inf, y = c(4.35,0.96),label = c("Wt","Mut"),vjust = 2,hjust=1.5)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#############http://www.sthda.com/english/wiki/one-way-anova-test-in-r
+
+levels(tall_data$`Clinincal variants`)
+
+## group stat 
+library(dplyr)
+mean_tall_data <- group_by(tall_data,`Clinincal variants`) %>%
+  summarise(
+    count = n(),
+    mean = mean(`GFP fold change`, na.rm = TRUE),
+    sd = sd(`GFP fold change`, na.rm = TRUE)
+  )
+
+# A tibble: 10 × 4
+`Clinincal variants` count  mean     sd
+<fct>                <int> <dbl>  <dbl>
+  1 nontag.C1                3 4.35  0.577 
+2 E13KO.C1                 3 0.963 0.189 
+3 mcherry                  3 1     0     
+4 v5z8                     3 4.07  0.886 
+5 BC-Mut                   3 0.97  0.0794
+6 CUL-Mut                  3 1.38  0.408 
+7 SWIM-Mut                 3 1.04  0.114 
+8 S15-Mut                  3 1.93  0.618 
+9 R217-Mut                 3 1.05  0.101 
+10 CY482-Mut                3 1.07  0.110
+
+##########################
+######## Check the homogeneity of variance assumption
+plot(res.aov, 1) ### or 
+
+leveneTest(`GFP fold change` ~ `Clinincal variants`,data=tall_data)
+#From the output above we can see that the p-value is not less than the significance level of 0.05.
+#This means that there is no evidence to suggest that the variance across groups is statistically significantly different.
+#Therefore, we can assume the homogeneity of variances in the different treatment groups.
+######### check for normality 
+# Extract the residuals
+aov_residuals <- residuals(object = res.aov )
+# Run Shapiro-Wilk test
+shapiro.test(x = aov_residuals )
+
+Shapiro-Wilk normality test
+
+data:  aov_residuals
+W = 0.9297, p-value = 0.0482
+
+########### data is not normal but still uinsg one-way anova 
+
+# Compute the analysis of variance
+res.aov <- aov(`GFP fold change` ~ `Clinincal variants`, data = tall_data)
+# Summary of the analysis
+summary(res.aov)
+
+###                     Df Sum Sq Mean Sq F value   Pr(>F)    
+`Clinincal variants`  9  46.72   5.191   29.77 1.14e-09 ***
+  Residuals            20   3.49   0.174                     
+---
+  Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+######## resolve ano
+pvalue.test <- pairwise.t.test(tall_data$`GFP fold change`,tall_data$`Clinincal variants`,
+                p.adjust.method = "BH")
+pvalue <- pvalue.test$p.value
+#data:  tall_data$`GFP fold change` and tall_data$`Clinincal variants` 
+
+          #nontag.C1 E13KO.C1 mcherry v5z8    BC-Mut CUL-Mut SWIM-Mut S15-Mut R217-Mut
+E13KO.C1  4.5e-08   -        -       -       -      -       -        -       -       
+  mcherry   4.5e-08   0.985    -       -       -      -       -        -       -       
+  v5z8      0.640     8.5e-08  8.8e-08 -       -      -       -        -       -       
+  BC-Mut    4.5e-08   0.985    0.985   8.5e-08 -      -       -        -       -       
+  CUL-Mut   1.0e-07   0.445    0.489   4.5e-07 0.445  -       -        -       -       
+  SWIM-Mut  4.5e-08   0.985    0.985   9.4e-08 0.985  0.551   -        -       -       
+  S15-Mut   2.1e-06   0.027    0.031   1.1e-05 0.027  0.239   0.038    -       -       
+  R217-Mut  4.5e-08   0.985    0.985   9.4e-08 0.985  0.562   0.985    0.039   -       
+  CY482-Mut 4.5e-08   0.985    0.985   9.4e-08 0.985  0.580   0.985    0.041   0.985
+
+############################# adding p-value 
+library(ggpubr)
+library(rstatix)
+library(dplyr)
+library(tidyverse)
+
+new_data$GFP <- as.numeric(new_data$GFP)
+str(new_data)
+stat.test <- compare_means(data=new_data,GFP ~ Variants,
+                           method = "t.test",p.adjust.method="BH")
+
+### change the name in stat.test
+
+stat.test$.y.[stat.test$.y. == 'GFP'] <- "GFP fold change"
+stat.test <- stat.test %>%
+  mutate(y.position = rep(1,45)) ### solve the y-value error 
+
+### stats.test_subset
+
+stat.test_subset <- stat.test[c(1,2,18,19,20,21,22,23,24),]
+stat.test_subset <- stat.test_subset %>%
+  mutate(y.position = c(5,5.5,6,6.3,6.6,6.9,7.1,7.4,7.7))
+
+plot_A + stat_pvalue_manual(
+  stat.test_subset,label = "p.signif",
+  vjust = 0.4, bracket.nudge.y = 1)
+
