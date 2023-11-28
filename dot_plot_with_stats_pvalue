@@ -169,11 +169,11 @@ stat.test <- compare_means(data=new_data,GFP ~ Variants,
 
 stat.test$.y.[stat.test$.y. == 'GFP'] <- "GFP fold change"
 stat.test <- stat.test %>%
-  mutate(y.position = rep(1,45)) ### solve the y-value error 
+  mutate(y.position = rep(1,45)) ### solve the y-value error ..adding y position
 
 ### stats.test_subset
 
-stat.test_subset <- stat.test[c(1,2,18,19,20,21,22,23,24),]
+stat.test_subset <- stat.test[c(1,2,18,19,20,21,22,23,24),] ### selecting specific comparisions 
 stat.test_subset <- stat.test_subset %>%
   mutate(y.position = c(5,5.5,6,6.3,6.6,6.9,7.1,7.4,7.7))
 
