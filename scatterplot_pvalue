@@ -1,0 +1,81 @@
+data <- read.table("./merge_K562_deseq_raw_norm.txt",header =T)
+
+
+
+library(ggplot2)
+library(ggpubr)
+
+########## nts 
+
+nt1_V_nt2.nor.cnt <- ggscatter(data, x = "norm_count_nt1_rep1", y = "norm_count_nt2_rep2",
+                               add = "reg.line",  # Add regressin line
+                               add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+                               conf.int = TRUE # Add confidence interval
+)
+
+
+nt1_V_nt2.nor.cnt <- nt1_V_nt2.nor.cnt + stat_cor(method = "pearson", 
+                                                  aes(label = paste("p =", sprintf("%.3f", cor.test(data$norm_count_nt2_rep2, data$norm_count_nt3_rep3)$p.value))),
+                                                  label.x = 100000, label.y = 1000000, 
+                                                  color = "red"
+)
+
+
+nt1_V_nt2.nor.cnt <- nt1_V_nt2.nor.cnt + stat_cor(method = "pearson", aes(label = paste("p =", sprintf("%.3f", cor.test(data$norm_count_nt2_rep2, data$norm_count_nt3_rep3)$p.value))),
+           label.x = 100000, label.y = 1000000, 
+           color = "red")
+
+#########
+nt2_V_nt3.nor.cnt <- ggscatter(data, x = "norm_count_nt2_rep2", y = "norm_count_nt3_rep3",
+                add = "reg.line",  # Add regressin line
+                add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+                conf.int = TRUE # Add confidence interval
+)
+# Add correlation coefficient
+nt2_V_nt3.nor.cnt  <- nt2_V_nt3.nor.cnt  + stat_cor(method = "pearson", aes(label = paste("p =", sprintf("%.3f", cor.test(data$norm_count_nt2_rep2, data$norm_count_nt3_rep3)$p.value))),
+                                                    label.x = 1e5, label.y = 1e6, 
+                                                    color = "red"
+)
+
+nt2_V_nt3.nor.cnt <- nt2_V_nt3.nor.cnt +
+  scale_x_continuous(labels = scales::scientific_format(scale = 1e5)) +
+  scale_y_continuous(labels = scales::scientific_format(scale = 1e5))
+
+##########
+nt1_V_nt3.nor.cnt <- ggscatter(data, x = "norm_count_nt1_rep1", y = "norm_count_nt3_rep3",
+                               add = "reg.line",  # Add regressin line
+                               add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+                               conf.int = TRUE # Add confidence interval
+)
+# Add correlation coefficient
+nt1_V_nt3.nor.cnt <- nt1_V_nt3.nor.cnt  + stat_cor(method = "pearson", aes(label = paste("p =", sprintf("%.3f", cor.test(data$norm_count_nt2_rep2, data$norm_count_nt3_rep3)$p.value))),
+                                                   label.x = 100000, label.y = 1000000, 
+                                                   color = "red"
+)
+
+nt1_V_nt3.nor.cnt <- nt1_V_nt3.nor.cnt +
+  scale_x_continuous(labels = scales::scientific_format(scale = 1e5)) +
+  scale_y_continuous(labels = scales::scientific_format(scale = 1e5))
+
+########## e13
+
+e13.1_V_e13.2.nor.cnt <- ggscatter(data, x = "raw_count_e13_rep1", y = "norm_count_nt3_rep3",
+                               add = "reg.line",  # Add regressin line
+                               add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+                               conf.int = TRUE # Add confidence interval
+)
+# Add correlation coefficient
+nt1_V_nt3.nor.cnt <- nt1_V_nt3.nor.cnt  + stat_cor(method = "pearson", aes(label = paste("p =", sprintf("%.3f", cor.test(data$norm_count_nt2_rep2, data$norm_count_nt3_rep3)$p.value))),
+                                                   label.x = 100000, label.y = 1000000, 
+                                                   color = "red"
+)
+
+nt1_V_nt3.nor.cnt <- nt1_V_nt3.nor.cnt +
+  scale_x_continuous(labels = scales::scientific_format(scale = 1e5)) +
+  scale_y_continuous(labels = scales::scientific_format(scale = 1e5))
+
+
+######### arrange 
+arranged_plots <- ggarrange(nt1_V_nt2.nor.cnt, nt1_V_nt3.nor.cnt,nt2_V_nt3.nor.cnt,ncol = 3, nrow = 1)
+arranged_plots
+#### exporting 1500 - 400 (without maintaing ratio)
