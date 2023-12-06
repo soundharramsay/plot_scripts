@@ -1,0 +1,97 @@
+count <- read.csv("./gene_count_matrix_from_stringtie.csv",header = T,row.names = 1)
+count$gene.names <- row.names(count)
+colnames(count) <- c("e10_rep1","e10_rep2","e10_rep3","e13_rep1","e13_rep2","e13_rep3","nt_rep1","nt_rep2","nt_rep3","gene.names") ### this style of naming is important for converting wide to long format
+
+## subsetting ENSG00000214655.11|ZSWIM8 ---- ENSG00000272589.1|ZSWIM8-AS1-----ENSG00000247556.7|OIP5-AS1
+
+subset_count <- count[c("ENSG00000214655.11|ZSWIM8","ENSG00000272589.1|ZSWIM8-AS1","ENSG00000247556.7|OIP5-AS1"),]
+subset_count<- subset_count[,-c(9,10)]
+
+###
+library(tidyverse)
+
+# Assuming your dataframe is named sub.count
+sub.count_long <- subset_count %>%
+  rownames_to_column("Gene") %>%
+  pivot_longer(cols = -Gene, 
+               names_to = c("Condition", "Clones"), 
+               values_to = "Value",
+               names_sep = "_rep")
+
+# Print the long-format dataframe
+print(sub.count_long)
+
+sub.count_long$Condition <- factor(sub.count_long$Condition, levels = c("nt", "e10", "e13"))
+
+ZSWIM8 <- ggplot(sub.count_long[sub.count_long$Gene == unique(sub.count_long$Gene)[1], ],
+                    aes(x = Condition, y = Value, fill = as.factor(Clones))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("gray60", "gray85", "gray90")) +
+  labs(title = unique(sub.count_long$Gene)[1],
+       x = "Condition",
+       y = "Value") +
+  theme_minimal()+
+  theme(panel.grid = element_blank())
+
+ZSWIM8 <- ZSWIM8+
+  geom_segment(aes(x = 1, y = 6000, xend = 2, yend = 6000),   
+               color = "red", size = 0.2) +
+  annotate("text", x = 1.3, y = 6200,
+           label = "p < 0.001", 
+           fontface = "plain", size = 4, color = "black", hjust = 0)+
+  geom_segment(aes(x = 1, y = 6800, xend = 3, yend = 6800),       ## nt vs e10
+               color = "red", size = 0.2) +
+  annotate("text", x = 1.3, y = 7000,
+           label = "p < 0.001", 
+           fontface = "plain", size = 4, color = "black", hjust = 0)
+
+####### 
+ZSWIM8.AS<- ggplot(sub.count_long[sub.count_long$Gene == unique(sub.count_long$Gene)[2], ],
+                    aes(x = Condition, y = Value, fill = as.factor(Clones))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("gray60", "gray85", "gray90")) +
+  labs(title = unique(sub.count_long$Gene)[2],
+       x = "Condition",
+       y = "Value") +
+  theme_minimal()+
+  theme(panel.grid = element_blank())
+
+ZSWIM8.AS <-ZSWIM8.AS +
+  geom_segment(aes(x = 1, y = 80, xend = 2, yend = 80),
+               color = "red", size = 0.2) +
+  annotate("text", x = 1.3, y = 82,
+           label = "p=0.58", 
+           fontface = "plain", size = 4, color = "black", hjust = 0)+
+  geom_segment(aes(x = 1, y = 90, xend = 3, yend = 90),                    ## nt vs e10
+               color = "red", size = 0.2) +
+  annotate("text", x = 1.3, y = 92,
+           label = "p=0.61", 
+           fontface = "plain", size = 4, color = "black", hjust = 0)
+
+####### 
+OIP5_AS <- ggplot(sub.count_long[sub.count_long$Gene == unique(sub.count_long$Gene)[3], ],
+                    aes(x = Condition, y = Value, fill = as.factor(Clones))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("gray60", "gray85", "gray90")) +
+  labs(title = unique(sub.count_long$Gene)[3],
+       x = "Condition",
+       y = "Value") +
+  theme_minimal()+
+  theme(panel.grid = element_blank())
+
+OIP5_AS <- OIP5_AS +
+  geom_segment(aes(x = 1, y = 18000, xend = 2, yend = 18000),
+              color = "red", size = 0.2) +
+  annotate("text", x = 1.3, y = 18300,
+           label = "p<0.001", 
+           fontface = "plain", size = 4, color = "black", hjust = 0)+
+  geom_segment(aes(x = 1, y = 19000, xend = 3, yend = 19000),                    ## nt vs e10
+               color = "red", size = 0.2) +
+  annotate("text", x = 1.3, y = 19300,
+           label = "p=0.97", 
+           fontface = "plain", size = 4, color = "black", hjust = 0)
+
+
+library(ggpubr)
+ggarrange(ZSWIM8,ZSWIM8.AS,OIP5_AS, ncol = 3, nrow = 1,common.legend = TRUE)
+
