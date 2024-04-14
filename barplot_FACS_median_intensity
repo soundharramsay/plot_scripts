@@ -1,0 +1,224 @@
+
+############### Input data as csv
+ 
+ Rep1	Rep2	Rep3
+Wild-type	20666	8973	8834
+ZSWIM8-K0-E13	2501	2414	2457
+Empty Vector(mChy+)	12496	10995	11773
+Empty Vector(mChy-)	12296	9951	10699
+V5-ZSWIM8(mChy+)	15709	13669	13892
+V5-ZSWIM8(mChy-)	12786	11095	11403
+BC MUT (mChy+)	10995	11693	10970
+BC MUT (mChy-)	11377	11171	10388
+CUL MUT (mChy+)	11773	11746	12156
+CUL MUT (mChy-)	11773	11120	11248
+SWIM MUT (mChy+)	11719	11045	12101
+SWIM MUT (mChy-)	12101	10459	11351
+
+
+
+
+
+
+
+
+#### Experiment description 
+# ob2 pg37
+# 1  nt1-c3 and e13-c3 is used to test mcherry, V5z8 and other clinincal mutants 
+#2.  three reps are done 
+#3 Rep 1 FACS done after Day6 
+#4 Rep 2 and 3 done after 8 days 
+
+## check for homogeneity if variance  -- T
+## check for normality --F  ---- still used one-way annova and post-hoc used pair-wise t-test 
+
+
+###################
+data <- read.csv("./37_april10_expressing_domain_muts_NT_background.csv",header = T,row.names = 1)
+str(data)
+
+###name change
+colnames(data)
+rownames(data)
+
+library(tidyverse)
+tall_data <- data %>%
+  rownames_to_column(var = "ZSWIM8domain.clinincalMUTNATS") %>%
+  gather(key = "Rep", value = "GFP fold change",-'ZSWIM8domain.clinincalMUTNATS')
+rownames(data)
+# ordering the x-axis 
+tall_data$`ZSWIM8DOMAINMUTNATS`<- tall_data$ZSWIM8DOMAINMUTNATS <- factor(tall_data$ZSWIM8domain.clinincalMUTNATS,
+                                                  levels = c("Wild-type", "ZSWIM8-K0-E13", "Empty Vector(mChy+)",
+                                                                                     "Empty Vector(mChy-)", "V5-ZSWIM8(mChy+)", "V5-ZSWIM8(mChy-)",
+                                                                                     "BC MUT (mChy+)", "BC MUT (mChy-)", "CUL MUT (mChy+)",
+                                                                                     "CUL MUT (mChy-)", "SWIM MUT (mChy+)", "SWIM MUT (mChy-)"))
+
+### rowMeans(data)
+#plotA<- ggplot(tall_data, aes(x =`ZSWIM8DOMAINMUTNATS`, y =`GFP fold change`)) +
+#geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.17,binwidth = 0.5) +
+#stat_summary(fun.data = mean_sdl, fun.args = list(mult = 1),geom = "pointrange", colour = "red",size = 0.1)+
+#theme_classic() +
+#geom_hline(yintercept = c(4.2,1),linetype="dotted")+
+#annotate("text",x = Inf, y = c( 4.1 , 0.9162826),label = c("Wt","Mut"),vjust = 0.5,hjust=1.5)+
+# theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+### barplot 
+
+library(dplyr)
+
+sd_data <- group_by(tall_data,`ZSWIM8domain.clinincalMUTNATS`) %>%
+  summarise(
+    count = n(),
+    mean = mean(`GFP fold change`, na.rm = TRUE),
+    sd = sd(`GFP fold change`, na.rm = TRUE)
+  )
+
+
+# Merge sd_data with tall_data
+merged_data <- merge(tall_data, sd_data, by = "ZSWIM8domain.clinincalMUTNATS")
+str(merged_data)
+
+# ordering the x-axis 
+merged_data$ZSWIM8DOMAINMUTNATS<- factor(merged_data$ZSWIM8domain.clinincalMUTNATS,
+                                         levels = rev(c("Wild-type", "ZSWIM8-K0-E13", "Empty Vector(mChy+)",
+                                                    "Empty Vector(mChy-)", "V5-ZSWIM8(mChy+)", "V5-ZSWIM8(mChy-)",
+                                                    "BC MUT (mChy+)", "BC MUT (mChy-)", "CUL MUT (mChy+)",
+                                                    "CUL MUT (mChy-)", "SWIM MUT (mChy+)", "SWIM MUT (mChy-)"))
+)
+
+
+### rowMeans(data)
+
+plotA <- ggplot(merged_data, aes(y = ZSWIM8DOMAINMUTNATS, x = mean)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, aes(fill = ZSWIM8DOMAINMUTNATS)) +
+  scale_fill_manual(values = c("Wild-type" = "lightgrey", "ZSWIM8-KO-E13" = "black", "Other" = "darkgrey")) +
+  stat_summary(fun.data = mean_sdl, fun.args = list(mult = 1), geom = "errorbar", 
+               aes(ymin = mean - sd, ymax = mean + sd), 
+               width = 0.2, position = position_dodge(0.9), color = "black", 
+               linewidth = 0.7) +
+  theme_classic() +
+  geom_vline(xintercept = c(12824.333, 2457.333), linetype = "dotted") +
+  annotate("text", x = c(12824.333, 2457.333), y = Inf, label = c("WT", "KO"), vjust = 1.5, hjust = 0.5) +
+  theme(axis.text.y = element_text(angle = 0, hjust = 1))
+        
+plotA
+
+#############http://www.sthda.com/english/wiki/one-way-anova-test-in-r
+
+levels(tall_data$`ZSWIM8DOMAINMUTNATS`)
+
+## group stat 
+library(dplyr)
+  <- group_by(tall_data,`ZSWIM8DOMAINMUTNATS`) %>%
+  summarise(
+    count = n(),
+    mean = mean(`GFP fold change`, na.rm = TRUE),
+    sd = sd(`GFP fold change`, na.rm = TRUE)
+  )
+
+# A tibble: 10 × 4
+ZSWIM8DOMAINMUTNATS count  mean     sd
+<fct>               <int> <dbl>  <dbl>
+  1 mcherry                 3  1    0     
+2 V5z8                    3  4.20 0.339 
+3 BC                      3  1.05 0.0572
+4 CUL                     3  1.63 0.187 
+5 SWIM                    3  1.82 0.189 
+
+##########################
+######## Check the homogeneity of variance assumption
+library(car)
+
+leveneTest(`GFP fold change` ~ `ZSWIM8DOMAINMUTNATS`,data=tall_data)
+
+#Levene's Test for Homogeneity of Variance (center = median)
+#      Df F value Pr(>F)
+#group  4  0.9422 0.4786
+#     10  
+#From the output above we can see that the p-value is not less than the significance level of 0.05.
+#This means that there is no evidence to suggest that the variance across groups is statistically significantly different.
+#Therefore, we can assume the homogeneity of variances in the different treatment groups.
+######### check for normality #
+# Extract the residuals
+aov_residuals <- residuals(object = res.aov )
+# Run Shapiro-Wilk test
+shapiro.test(x = aov_residuals )
+
+#Shapiro-Wilk normality test
+
+#data:  aov_residuals
+#W = 0.9297, p-value = 0.0482
+
+########### data is not normal but still uinsg one-way anova 
+
+# Compute the analysis of variance
+res.aov <- aov(`GFP fold change` ~ `ZSWIM8DOMAINMUTNATS`, data = tall_data)
+# Summary of the analysis
+summary(res.aov)
+
+#Df Sum Sq Mean Sq F value   Pr(>F)    
+#ZSWIM8DOMAINMUTNATS  4 20.634   5.158   136.7 1.11e-08 ***
+ # Residuals           10  0.377   0.038                     
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+######## resolve ano
+pvalue_test <- pairwise.t.test(tall_data$`GFP fold change`,tall_data$`ZSWIM8DOMAINMUTNATS`,
+                p.adjust.method = "BH")
+pvalue <- pvalue_test$p.value
+#data:  tall_data$`GFP fold change` and tall_data$`ZSWIM8DOMAINMUTNATS` 
+
+       mcherry            V5z8          BC       CUL
+V5z8 1.169527e-08           NA          NA        NA
+BC   7.478496e-01 1.169527e-08          NA        NA
+CUL  3.810078e-03 5.582313e-08 0.005727741        NA
+SWIM 8.472472e-04 8.783058e-08 0.001149317 0.2872137
+
+############################# adding p-value 
+library(ggpubr)
+library(rstatix)
+library(dplyr)
+library(tidyverse)
+
+
+### name change for easy handling 
+new_data <- tall_data
+colnames(new_data) <- c("Variants","Rep.days","GFP")
+
+new_data$GFP <- as.numeric(new_data$GFP)
+str(new_data)
+stat.test <- compare_means(data=new_data,GFP ~ Variants,
+                           method = "t.test",p.adjust.method="BH")
+
+### change the name in stat.test
+
+stat.test$.y.[stat.test$.y. == 'GFP'] <- "mean"
+stat.test <- stat.test %>%
+  mutate(y.position = rep(1,10)) ### solve the y-value error 
+
+### stats.test_subset
+stat.test_subset <- stat.test[c(1,2,3,4),]
+stat.test_subset <- stat.test_subset %>%
+  mutate(y.position = c(15001,15004,15007,15009))
+str(stat.test_subset)
+
+
+plotA + stat_pvalue_manual(
+  data = stat.test_subset,
+  label = stat.test_subset$p.signif,
+  y.position = stat.test_subset$y.position,
+  vjust = 0.4,
+  bracket.nudge.y = 1
+)
+
+
+
+# Convert p.signif to numeric if it's currently a factor
+stat.test_subset$p.signif <- as.numeric(as.character(stat.test_subset$p.signif))
+
+unique_values <- unique(stat.test_subset$p.signif)
+print(unique_values)
+# Add stat_pvalue_manual to the plot
+plotA + stat_pvalue_manual(
+  data = stat.test_subset, label = "p.signif",
+  vjust = 0.4, bracket.nudge.y = 1
+)
