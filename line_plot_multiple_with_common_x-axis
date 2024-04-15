@@ -1,0 +1,52 @@
+library(ggplot2)
+
+
+#data look
+
+my data  Index	 Metapredict	 ppLDDT	PONDR_VLTX
+1	0.757	37.499	0.8076168
+2	0.71	42.541	0.85373291
+3	0.691	47.485	0.52123332
+4	0.654	48.13	0.64681072........want to make different line plot with same x-axis
+
+
+
+
+data<- read.csv("./disorder_scores_plot.csv")
+#Convert the data to long format
+data_long <- tidyr::gather(data, key = "Variable", value = "Value", -X.Index)
+
+# Plot using ggplot2
+# Plot using ggplot2 with dual y-axis
+# Load the ggplot2 library
+library(ggplot2)
+
+# Create a data frame
+data <- data.frame(
+  X.Index = c(1, 2, 3, 4),
+  Metapredict = c(0.757, 0.71, 0.691, 0.654),
+  ppLDDT = c(37.499, 42.541, 47.485, 48.13),
+  PONDR_VLTX = c(0.8076168, 0.85373291, 0.52123332, 0.64681072)
+)
+
+# Reorder the levels of the "Variable" factor
+data_long$Variable <- factor(data_long$Variable, levels = c("ppLDDT", "Metapredict", "PONDR_VLTX"))
+
+
+# Plot using ggplot2 with independent y-axes
+p <- ggplot(data_long, aes(x = X.Index, y = Value, color = Variable)) +
+  geom_line() +
+  facet_wrap(~Variable, scales = "free_y", ncol = 1) +
+  labs(x = "Index", y = NULL) +
+  scale_color_manual(values = c("black", "black", "black")) +
+  theme_minimal()
+
+# Add transparent horizontal highlights
+p + geom_rect(aes(xmin = 1, xmax = 70, ymin = -Inf, ymax = Inf), fill = "lightgray", alpha = 0.01, color = NA) +
+  geom_rect(aes(xmin = 511, xmax = 762, ymin = -Inf, ymax = Inf), fill = "lightgray", alpha = 0.01, color = NA) +
+  geom_rect(aes(xmin = 1015, xmax = 1273, ymin = -Inf, ymax = Inf), fill = "lightgray", alpha = 0.01, color = NA) +
+  geom_rect(aes(xmin = 1427, xmax = 1660, ymin = -Inf, ymax = Inf), fill = "lightgray", alpha = 0.01, color = NA)
+
+
+
+
