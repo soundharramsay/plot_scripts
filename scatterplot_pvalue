@@ -1,5 +1,4 @@
-
-##################### correlating plot 
+##################### corelating plot 
 ########
 #####################
 
@@ -20,8 +19,6 @@ FC_count <- read.csv("./Feature_gene_counts.csv",header = T)
 
 colnames(FC_count) <- paste("FC",colnames(FC_count),sep=".")
 colnames(FC_count)[1] <- "gene.id"
-
-
 
 
 merged_counts <- merge(stringtie_count, salmon_count, by = "gene.id", all = TRUE)
@@ -80,11 +77,21 @@ d12.nta_Vs.nta.str_sal
 
 
 ##################### looping for plot for nta vs ntb in deaturecount, salmon, stringtie
-data_str_sal <- merged_counts[,c(3,4,19:20,35:36)]
+data_str_sal <- merged_counts[,c(3,4,19:20,35:36)] #### 60089
 colnames(data_str_sal)
 colnames(merged_counts)
 str(data_str_sal)
 
+# Calculate row sums
+nt.row_sums <- rowSums(data_str_sal == 0)
+
+# Find indices where row sums are not equal to the number of columns (indicating at least one non-zero value)
+nt.nonzero_indices <- row_sums != ncol(data_str_sal)
+
+# Filter rows based on nonzero row sums
+nt.nonzero_rows <- data_str_sal[nt.nonzero_indices, ] ### 32873
+
+data_str_sal <-nt.nonzero_rows
 # Convert all columns to numeric
 data_str_sal[] <- lapply(data_str_sal, as.numeric)
 
