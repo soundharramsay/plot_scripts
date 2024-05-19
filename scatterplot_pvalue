@@ -1,3 +1,162 @@
+
+##################### correlating plot 
+########
+#####################
+
+### stringties counts
+stringtie_count <- read.csv("./stringtie_gene_count_matrix.csv",header = T) 
+
+colnames(stringtie_count) <- paste("str",colnames(stringtie_count),sep=".")
+colnames(stringtie_count)[1] <- "gene.id"
+
+### salmons counts
+salmon_count <- read.csv("./3_rounded_salmon.merged.gene_counts.csv",header = T) 
+
+colnames(salmon_count) <- paste("sal",colnames(salmon_count),sep=".")
+colnames(salmon_count)[1] <- "gene.id"
+###
+
+FC_count <- read.csv("./Feature_gene_counts.csv",header = T) 
+
+colnames(FC_count) <- paste("FC",colnames(FC_count),sep=".")
+colnames(FC_count)[1] <- "gene.id"
+
+
+
+
+merged_counts <- merge(stringtie_count, salmon_count, by = "gene.id", all = TRUE)
+merged_counts <- merge(merged_counts, FC_count, by = "gene.id", all = TRUE)
+rownames(merged_counts) <- merged_counts$gene.id
+merged_counts <- merged_counts[,-1]
+# Identify columns that are not numeric
+#non_numeric_cols <- sapply(merged_counts, function(x) !is.numeric(x))
+
+# Convert non-numeric columns to numeric
+#merged_counts[non_numeric_cols] <- lapply(merged_counts[non_numeric_cols], as.numeric)
+
+
+merged_counts <- na.omit(merged_counts)
+colnames(merged_counts)
+rownames(merged_counts)
+
+str(merged_counts)
+
+library(ggplot2)
+library(ggpubr)
+
+########## nts 
+
+data_str_sal <- merged_counts[,c(3,4,1,2,17:20,33:36)]
+
+# Calculate row sums
+row_sums <- rowSums(data_str_sal[, sapply(data_str_sal, is.numeric)])
+
+# Filter out rows where row sums are not equal to zero
+data_str_sal <- data_str_sal[row_sums != 0, ]
+
+
+d12.nta_Vs.nta.str_sal <- ggscatter(data_str_sal, 
+                                    x = "str.D12.nta", 
+                                    y = "sal.D12.nta",
+                                    add = "reg.line",  # Add regression line
+                                    add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+                                    conf.int = TRUE # Add confidence interval
+) + 
+scale_x_log10() +  # Convert x-axis scale to log10
+scale_y_log10()    # Convert y-axis scale to log10
+d12.nta_Vs.nta.str_sal
+
+d12.nta_Vs.nta.str_sal <- d12.nta_Vs.nta.str_sal + 
+  stat_cor(method = "pearson", 
+           aes(label = paste("Pearson's r =", sprintf("%.3f", cor.test(data_str_sal$str.D12.nta, data_str_sal$sal.D12.nta)$estimate),
+                             "\np =", sprintf("%.3f", cor.test(data_str_sal$str.D12.nta, data_str_sal$sal.D12.nta)$p.value))),
+           label.x = Inf, label.y = -Inf, 
+           color = "red", 
+           hjust = 1, vjust = 0
+  )
+
+d12.nta_Vs.nta.str_sal
+
+
+
+##################### looping for plot for nta vs ntb in deaturecount, salmon, stringtie
+data_str_sal <- merged_counts[,c(3,4,19:20,35:36)]
+colnames(data_str_sal)
+colnames(merged_counts)
+str(data_str_sal)
+
+# Convert all columns to numeric
+data_str_sal[] <- lapply(data_str_sal, as.numeric)
+
+# Check the structure of the data frame after conversion
+str(data_str_sal)
+# Assuming your data frame is named data_str_sal
+# Specify the pairs of columns for scatter plots
+column_pairs <- list(c("str.D12.nta", "str.D12.ntb"),
+                     c("sal.D12.nta", "sal.D12.ntb"),
+                     c("FC.D12.nta", "FC.D12.ntb"))
+
+
+
+# Create a list to store scatter plots
+scatter_plots <- list()
+
+# Loop through the column pairs
+for (pair in column_pairs) {
+  # Create scatter plot
+  scatter_plot <- ggscatter(data_str_sal, x = pair[1], y = pair[2],
+                            add = "reg.line",
+                            add.params = list(color = "blue", fill = "lightgray"),
+                            conf.int = TRUE) +
+    scale_x_log10() +
+    scale_y_log10()
+  
+  # Compute correlation statistic for the current pair
+  correlation_stat <- cor.test(data_str_sal[[pair[1]]], data_str_sal[[pair[2]]])
+  cor_label <- paste("Pearson's r =", sprintf("%.3f", correlation_stat$estimate),
+                     "\np =", sprintf("%.3f", correlation_stat$p.value))
+  
+  # Add correlation statistic to the scatter plot
+  scatter_plot_stat <- scatter_plot + 
+    stat_cor(method = "pearson", 
+             aes(label = cor_label),
+             label.x = Inf, label.y = -Inf, 
+             color = "red", 
+             hjust = 1, vjust = 0)
+  
+  # Add the scatter plot to the list
+  scatter_plots[[length(scatter_plots) + 1]] <- scatter_plot_stat
+}
+
+# Arrange and display the scatter plots
+ggarrange(plotlist = scatter_plots, ncol = 3, nrow = 1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 data <- read.table("./merge_K562_deseq_raw_norm.txt",header =T)
 
 
