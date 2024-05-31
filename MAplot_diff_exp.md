@@ -1,3 +1,4 @@
+######################## for tri color plot search blue
 ### stringties counts
 stringtie_count <- read.csv("./stringtie_gene_count_matrix.csv",header = T) 
 colnames(stringtie_count) <- paste(colnames(stringtie_count),"count",sep = "_")
@@ -420,7 +421,7 @@ str-62703
 sal-62703
 FC -63086 
 ### genes only in 
-FC <- FC_count$gene_id
+FC <- FC_count$gene.id
 sal <- salmon_count$gene.id
 only_in_sal <- setdiff(sal,FC) #### 2614
 only_in_FC <- setdiff(FC,sal)#### 2997
@@ -433,13 +434,13 @@ sal.LT_D12_nt_vs_e13_deseq.res <- read.table("./salmoncondition_control_treated.
 ##### marking colnames with id before merging 
 colnames(sal.LT_D12_nt_vs_e13_deseq.norm) <- paste(colnames(sal.LT_D12_nt_vs_e13_deseq.norm),"sal_LT_nt_vs_e13_deseq.norm",sep="-")
 colnames(sal.LT_D12_nt_vs_e13_deseq.res) <- paste(colnames(sal.LT_D12_nt_vs_e13_deseq.res),"sal_LT_nt_vs_e13_deseq",sep="-")
-colnames(sal.LT_D12_nt_vs_e13_deseq.res)[1] <- "gene_id"
-colnames(sal.LT_D12_nt_vs_e13_deseq.norm)[1] <- "gene_id"
+colnames(sal.LT_D12_nt_vs_e13_deseq.res)[1] <- "gene.id"
+colnames(sal.LT_D12_nt_vs_e13_deseq.norm)[1] <- "gene.id"
 #### merge dataframe 
 # Assuming count, TPM, Deseq.normalized, and deseq are your data frames
 # Merge count and TPM data frames
-salLT_d12_nt_vs_e13.merged_df <- merge(sal.LT_D12_nt_vs_e13_deseq.res, sal.LT_D12_nt_vs_e13_deseq.norm, by = "gene_id")
-salLT_d12_nt_vs_e13.merged_df_deseq_count <- merge(salLT_d12_nt_vs_e13.merged_df,salmon_count,by = "gene_id")
+salLT_d12_nt_vs_e13.merged_df <- merge(sal.LT_D12_nt_vs_e13_deseq.res, sal.LT_D12_nt_vs_e13_deseq.norm, by = "gene.id")
+salLT_d12_nt_vs_e13.merged_df_deseq_count <- merge(salLT_d12_nt_vs_e13.merged_df,salmon_count,by = "gene.id")
 ## Assuming merged_df is your dataframe
 
 # Check if any NA values exist in the dataframe
@@ -489,7 +490,7 @@ library(ggrepel)
 library(scales)
 
 # Your data
-sal.gene_id <- salLT_d12_nt_vs_e13.mer.df_deseq_count.basemean$gene_id
+sal.gene_id <- salLT_d12_nt_vs_e13.mer.df_deseq_count.basemean$gene.id
 sal.xval <- salLT_d12_nt_vs_e13.mer.df_deseq_count.basemean$mean.nt.deseq
 sal.yval <- salLT_d12_nt_vs_e13.mer.df_deseq_count.basemean$log2FoldChange
 sal.padj <- salLT_d12_nt_vs_e13.mer.df_deseq_count.basemean$padj
