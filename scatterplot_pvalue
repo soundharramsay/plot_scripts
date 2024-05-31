@@ -1,22 +1,16 @@
-##################### corelating plot 
-########
-#####################
 
 ### stringties counts
 stringtie_count <- read.csv("./stringtie_gene_count_matrix.csv",header = T) 
-
 colnames(stringtie_count) <- paste("str",colnames(stringtie_count),sep=".")
 colnames(stringtie_count)[1] <- "gene.id"
 
 ### salmons counts
 salmon_count <- read.csv("./3_rounded_salmon.merged.gene_counts.csv",header = T) 
-
 colnames(salmon_count) <- paste("sal",colnames(salmon_count),sep=".")
 colnames(salmon_count)[1] <- "gene.id"
-###
 
+###FC
 FC_count <- read.csv("./Feature_gene_counts.csv",header = T) 
-
 colnames(FC_count) <- paste("FC",colnames(FC_count),sep=".")
 colnames(FC_count)[1] <- "gene.id"
 
@@ -25,11 +19,6 @@ merged_counts <- merge(stringtie_count, salmon_count, by = "gene.id", all = TRUE
 merged_counts <- merge(merged_counts, FC_count, by = "gene.id", all = TRUE)
 rownames(merged_counts) <- merged_counts$gene.id
 merged_counts <- merged_counts[,-1]
-# Identify columns that are not numeric
-#non_numeric_cols <- sapply(merged_counts, function(x) !is.numeric(x))
-
-# Convert non-numeric columns to numeric
-#merged_counts[non_numeric_cols] <- lapply(merged_counts[non_numeric_cols], as.numeric)
 
 
 merged_counts <- na.omit(merged_counts)
@@ -41,90 +30,54 @@ str(merged_counts)
 library(ggplot2)
 library(ggpubr)
 
-########## nts 
-
-data_str_sal <- merged_counts[,c(3,4,1,2,17:20,33:36)]
-
-# Calculate row sums
-row_sums <- rowSums(data_str_sal[, sapply(data_str_sal, is.numeric)])
-
-# Filter out rows where row sums are not equal to zero
-data_str_sal <- data_str_sal[row_sums != 0, ]
+# Extract required columns
+btw_nts_data_str_sal <- merged_counts[, c(3, 4, 1, 2, 17:20, 33:36)]
 
 
-d12.nta_Vs.nta.str_sal <- ggscatter(data_str_sal, 
-                                    x = "str.D12.nta", 
-                                    y = "sal.D12.nta",
-                                    add = "reg.line",  # Add regression line
-                                    add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
-                                    conf.int = TRUE # Add confidence interval
-) + 
-scale_x_log10() +  # Convert x-axis scale to log10
-scale_y_log10()    # Convert y-axis scale to log10
-d12.nta_Vs.nta.str_sal
-
-d12.nta_Vs.nta.str_sal <- d12.nta_Vs.nta.str_sal + 
-  stat_cor(method = "pearson", 
-           aes(label = paste("Pearson's r =", sprintf("%.3f", cor.test(data_str_sal$str.D12.nta, data_str_sal$sal.D12.nta)$estimate),
-                             "\np =", sprintf("%.3f", cor.test(data_str_sal$str.D12.nta, data_str_sal$sal.D12.nta)$p.value))),
-           label.x = Inf, label.y = -Inf, 
-           color = "red", 
-           hjust = 1, vjust = 0
-  )
-
-d12.nta_Vs.nta.str_sal
-
-
-
-##################### looping for plot for nta vs ntb in deaturecount, salmon, stringtie
-data_str_sal <- merged_counts[,c(3,4,19:20,35:36)] #### 60089
-colnames(data_str_sal)
-colnames(merged_counts)
-str(data_str_sal)
-
-# Calculate row sums
-nt.row_sums <- rowSums(data_str_sal == 0)
-
-# Find indices where row sums are not equal to the number of columns (indicating at least one non-zero value)
-nt.nonzero_indices <- row_sums != ncol(data_str_sal)
-
-# Filter rows based on nonzero row sums
-nt.nonzero_rows <- data_str_sal[nt.nonzero_indices, ] ### 32873
-
-data_str_sal <-nt.nonzero_rows
 # Convert all columns to numeric
-data_str_sal[] <- lapply(data_str_sal, as.numeric)
+btw_nts_data_str_sal[] <- lapply(btw_nts_data_str_sal, as.numeric)
 
 # Check the structure of the data frame after conversion
-str(data_str_sal)
-# Assuming your data frame is named data_str_sal
+str(btw_nts_data_str_sal)
+
 # Specify the pairs of columns for scatter plots
-column_pairs <- list(c("str.D12.nta", "str.D12.ntb"),
-                     c("sal.D12.nta", "sal.D12.ntb"),
-                     c("FC.D12.nta", "FC.D12.ntb"))
+btw_nt_column_pairs <- list(c("str.D12.nta", "sal.D12.nta"),
+                            c("sal.D12.nta", "FC.D12.nta"),
+                            c("str.D12.nta", "FC.D12.nta"))
 
-
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
 
 # Create a list to store scatter plots
-scatter_plots <- list()
+btw_nt_scatter_plots <- list()
 
 # Loop through the column pairs
-for (pair in column_pairs) {
+for (pair in btw_nt_column_pairs) {
+  # Replace remaining 0 values with a small positive number (e.g., 0.1) for log transformation
+ # btw_nt_transformed <- btw_nts_data_str_sal %>%
+    #mutate(across(all_of(pair), ~ ifelse(. <= 0, 0.1, .)))
+  
   # Create scatter plot
-  scatter_plot <- ggscatter(data_str_sal, x = pair[1], y = pair[2],
-                            add = "reg.line",
-                            add.params = list(color = "blue", fill = "lightgray"),
-                            conf.int = TRUE) +
-    scale_x_log10() +
-    scale_y_log10()
+  btw_nt_scatter_plot <- ggscatter(btw_nts_data_str_sal, x = pair[1], y = pair[2],
+                                   add = "reg.line",
+                                   add.params = list(color = "blue", fill = "lightgray"),
+                                   conf.int = TRUE) +
+    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                  labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                  limits = c(0.1, NA)) +  # Set limits to start from 0.1
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                  labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                  limits = c(0.1, NA))    # Set limits to start from 0.1
   
   # Compute correlation statistic for the current pair
-  correlation_stat <- cor.test(data_str_sal[[pair[1]]], data_str_sal[[pair[2]]])
+  correlation_stat <- cor.test(btw_nts_data_str_sal[[pair[1]]], btw_nts_data_str_sal[[pair[2]]])
   cor_label <- paste("Pearson's r =", sprintf("%.3f", correlation_stat$estimate),
                      "\np =", sprintf("%.3f", correlation_stat$p.value))
   
   # Add correlation statistic to the scatter plot
-  scatter_plot_stat <- scatter_plot + 
+  btw_nt_scatter_plot_stat <- btw_nt_scatter_plot + 
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +  # Add x=y line
     stat_cor(method = "pearson", 
              aes(label = cor_label),
              label.x = Inf, label.y = -Inf, 
@@ -132,15 +85,114 @@ for (pair in column_pairs) {
              hjust = 1, vjust = 0)
   
   # Add the scatter plot to the list
-  scatter_plots[[length(scatter_plots) + 1]] <- scatter_plot_stat
+  btw_nt_scatter_plots[[length(btw_nt_scatter_plots) + 1]] <- btw_nt_scatter_plot_stat
+  
+  # Print out the correlation statistic
+  print(paste("Correlation statistics for", pair[1], "vs", pair[2]))
+  print(correlation_stat)
 }
 
 # Arrange and display the scatter plots
-ggarrange(plotlist = scatter_plots, ncol = 3, nrow = 1)
+ggarrange(plotlist = btw_nt_scatter_plots, ncol = 3, nrow = 1)
 
 
 
+######################### comparing e13a vs e13b by str,sal,FC
+### stringties counts
+stringtie_count <- read.csv("./stringtie_gene_count_matrix.csv",header = T) 
+colnames(stringtie_count) <- paste("str",colnames(stringtie_count),sep=".")
+colnames(stringtie_count)[1] <- "gene.id"
 
+### salmons counts
+salmon_count <- read.csv("./3_rounded_salmon.merged.gene_counts.csv",header = T) 
+colnames(salmon_count) <- paste("sal",colnames(salmon_count),sep=".")
+colnames(salmon_count)[1] <- "gene.id"
+
+###FC
+FC_count <- read.csv("./Feature_gene_counts.csv",header = T) 
+colnames(FC_count) <- paste("FC",colnames(FC_count),sep=".")
+colnames(FC_count)[1] <- "gene.id"
+
+
+merged_counts <- merge(stringtie_count, salmon_count, by = "gene.id", all = TRUE)
+merged_counts <- merge(merged_counts, FC_count, by = "gene.id", all = TRUE)
+rownames(merged_counts) <- merged_counts$gene.id
+merged_counts <- merged_counts[,-1]
+
+
+merged_counts <- na.omit(merged_counts)
+colnames(merged_counts)
+rownames(merged_counts)
+
+str(merged_counts)
+
+library(ggplot2)
+library(ggpubr)
+
+# Extract required columns
+btw_nts_data_str_sal <- merged_counts[, c(1,2,17,18,33,34)]
+
+
+# Convert all columns to numeric
+btw_nts_data_str_sal[] <- lapply(btw_nts_data_str_sal, as.numeric)
+
+# Check the structure of the data frame after conversion
+str(btw_nts_data_str_sal)
+
+# Specify the pairs of columns for scatter plots
+btw_e13_column_pairs <- list(c("str.D12.E13C2a", "sal.D12.E13C2a"),
+                             c("sal.D12.E13C2a", "FC.D12.E13C2a"),
+                             c("str.D12.E13C2a", "FC.D12.E13C2a"))
+
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+
+# Create a list to store scatter plots
+btw_e13_scatter_plots <- list()
+
+# Loop through the column pairs
+for (pair in btw_e13_column_pairs) {
+  # Replace remaining 0 values with a small positive number (e.g., 0.1) for log transformation
+  #btw_e13_transformed <- btw_nts_data_str_sal %>%
+    #mutate(across(all_of(pair), ~ ifelse(. <= 0, 0.1, .)))
+  
+  # Create scatter plot
+  btw_e13_scatter_plot <- ggscatter(btw_nts_data_str_sal, x = pair[1], y = pair[2],
+                                    add = "reg.line",
+                                    add.params = list(color = "blue", fill = "lightgray"),
+                                    conf.int = TRUE) +
+    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                  labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                  limits = c(0.1, NA)) +  # Set limits to start from 0.1
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                  labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                  limits = c(0.1, NA))    # Set limits to start from 0.1
+  
+  # Compute correlation statistic for the current pair
+  correlation_stat <- cor.test(btw_e13_transformed[[pair[1]]], btw_e13_transformed[[pair[2]]])
+  cor_label <- paste("Pearson's r =", sprintf("%.3f", correlation_stat$estimate),
+                     "\np =", sprintf("%.3f", correlation_stat$p.value))
+  
+  # Add correlation statistic to the scatter plot
+  btw_e13_scatter_plot_stat <- btw_e13_scatter_plot + 
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +  # Add x=y line
+    stat_cor(method = "pearson", 
+             aes(label = cor_label),
+             label.x = Inf, label.y = -Inf, 
+             color = "red", 
+             hjust = 1, vjust = 0)
+  
+  # Add the scatter plot to the list
+  btw_e13_scatter_plots[[length(btw_e13_scatter_plots) + 1]] <- btw_e13_scatter_plot_stat
+  
+  # Print out the correlation statistic
+  print(paste("Correlation statistics for", pair[1], "vs", pair[2]))
+  print(correlation_stat)
+}
+
+# Arrange and display the scatter plots
+ggarrange(plotlist = btw_e13_scatter_plots, ncol = 3, nrow = 1)
 
 
 
