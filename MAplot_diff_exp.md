@@ -1,4 +1,4 @@
-########################### MA plot and tric color MA-plot (search blue for tricolor)
+########################### MA plot and tri color MA-plot (search blue for tricolor)
 ### stringties counts
 stringtie_count <- read.csv("./stringtie_gene_count_matrix.csv",header = T) 
 colnames(stringtie_count) <- paste(colnames(stringtie_count),"count",sep = "_")
