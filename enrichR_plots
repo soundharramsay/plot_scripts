@@ -1,0 +1,101 @@
+KEGG_dow <- read.table("./down_KEGG_2021_Human_table.txt",header = T,sep="\t")
+bio_dow <- read.table("./down_GO_Biological_Process_2023_table.txt",header = T,sep="\t")
+cc_dow <- read.table("./down_GO_Cellular_Component_2023_table.txt",header = T,sep="\t")
+dow_mf <- read.table("./down_GO_Molecular_Function_2023_table.txt",header = T,sep="\t")
+
+
+#### combined plot 
+
+convert_overlap_to_count <- function(data) {
+  data$Count <- as.numeric(sapply(strsplit(as.character(data$Overlap), "/"), `[`, 1))
+  return(data)
+}
+KEGG_dow <- convert_overlap_to_count(KEGG_dow)
+bio_dow <- convert_overlap_to_count(bio_dow)
+cc_dow <- convert_overlap_to_count(cc_dow )
+mf_dow <- convert_overlap_to_count(dow_mf)
+
+library(ggplot2)
+library(gridExtra)
+
+plot_top10 <- function(data, title) {
+  # Ensure the column names match your data
+  data <- data[order(data$Adjusted.P.value), ]
+  data_top10 <- head(data, 10)
+  
+  ggplot(data_top10, aes(x = -log10(Adjusted.P.value), y = reorder(Term, Adjusted.P.value))) +
+    geom_point(aes(size = Count, color = -log10(Adjusted.P.value))) +
+    scale_color_gradient(low = "blue", high = "red") +
+    theme_minimal() +
+    labs(
+      x = "-log10(Adjusted P-value)",
+      y = "Pathway",
+      size = "Gene Count",
+      color = "-log10(Adjusted P-value)",
+      title = title
+    ) +
+    theme(axis.text.y = element_text(size = 10))
+}
+
+# Create individual plots
+plot_KEGG_dow <- plot_top10(KEGG_dow, "KEGG_dow Pathways")
+plot_bio_dow <- plot_top10(bio_dow, "bio_dow Pathways")
+plot_cc_dow <- plot_top10(cc_dow , "cc_dow Pathways")
+plot_mf_dow <- plot_top10(mf_dow, "mf_dow Pathways")
+
+
+############################ part ####### up 
+KEGG_up <- read.table("./up_KEGG_2021_Human_table.txt",header = T,sep="\t")
+bio_up <- read.table("./up_GO_Biological_Process_2023_table.txt",header = T,sep="\t")
+cc_up <- read.table("./up_GO_Cellular_Component_2023_table.txt",header = T,sep="\t")
+mf_up<- read.table("./up_GO_Molecular_Function_2023_table.txt",header = T,sep="\t")
+
+
+#### combined plot 
+
+convert_overlap_to_count <- function(data_up) {
+  data_up$Count <- as.numeric(sapply(strsplit(as.character(data_up$Overlap), "/"), `[`, 1))
+  return(data_up)
+}
+KEGG_up <- convert_overlap_to_count(KEGG_up)
+bio_up <- convert_overlap_to_count(bio_up)
+cc_up <- convert_overlap_to_count(cc_up )
+mf_up <- convert_overlap_to_count(mf_up)
+
+library(ggplot2)
+library(gridExtra)
+
+up_plot_top10 <- function(data_up, title) {
+  # Ensure the column names match your data_up
+  data_up <- data_up[order(data_up$Adjusted.P.value), ]
+  data_up_top10 <- head(data_up, 10)
+  
+  ggplot(data_up_top10, aes(x = -log10(Adjusted.P.value), y = reorder(Term, Adjusted.P.value))) +
+    geom_point(aes(size = Count, color = -log10(Adjusted.P.value))) +
+    scale_color_gradient(low = "blue", high = "red") +
+    theme_minimal() +
+    labs(
+      x = "-log10(Adjusted P-value)",
+      y = "Pathway",
+      size = "Gene Count",
+      color = "-log10(Adjusted P-value)",
+      title = title
+    ) +
+    theme(axis.text.y = element_text(size = 10))
+}
+
+# Create individual plots
+plot_KEGG_up <- up_plot_top10(KEGG_up, "KEGG_up Pathways")
+plot_bio_up <- up_plot_top10(bio_up, "bio_up Pathways")
+plot_cc_up <- up_plot_top10(cc_up , "cc_up Pathways")
+plot_mf_up <- up_plot_top10(mf_up, "mf_up Pathways")
+
+
+
+# Combine plots into a single layout
+grid.arrange(plot_KEGG_dow,plot_KEGG_up,ncol=2)
+grid.arrange(plot_bio_dow,plot_bio_up,ncol=2)
+grid.arrange(plot_cc_dow,plot_cc_up,ncol=2)
+grid.arrange(plot_mf_dow,plot_mf_up,ncol=2)
+
+
